@@ -33,7 +33,6 @@ int is_keyword(char *word) {
 void process_line(char *line) {
     int i = 0, inside_comment = 0;
     
-    printf(1,"salam\n");
     while (line[i]) {
         if (line[i] == '#' && !inside_comment) {
             inside_comment = 1;
@@ -140,29 +139,41 @@ void runcmd(struct cmd *cmd) {
     default:
         panic("runcmd");
 
-    case EXEC:
+        case EXEC:
         ecmd = (struct execcmd *)cmd;
         if (ecmd->argv[0] == 0)
             exit();
-
+    
         if (ecmd->argv[0][0] == '!') {
-            char *word = ecmd->argv[0] + 1; // Skip '!'
-            if (is_keyword(word)) {
-                printf(1, "\033[34m%s\033[0m ", word); // Print in blue
-
-                for (int i = 1; ecmd->argv[i] != 0; i++) {
-                    printf(1, "%s ", ecmd->argv[i]);
-
+            int in_hash = 0; // Flag to track if inside #...#
+            
+            // printf(1, ""); // Ensure correct output formatting
+            for (int i = 0; ecmd->argv[i] != 0; i++) {
+                char *word = (i == 0) ? ecmd->argv[i] + 1 : ecmd->argv[i]; // Skip '!' for first word
+                
+                while (*word) {
+                    if (*word == '#') {
+                        in_hash = !in_hash; // Toggle hash flag
+                    } else if (!in_hash) {
+                        if (is_keyword(word)) {
+                            printf(1, "\033[34m%s\033[0m ", word);
+                        } else {
+                            printf(1, "%s ", word);
+                        }
+                        break; // Move to next word after printing
+                    }
+                    word++; // Move to next character
                 }
-                printf(1,"\n");
-                exit();
             }
+            printf(1, "\n");
+            exit();
         }
-
+    
         // Execute normally if not a '!' command
         exec(ecmd->argv[0], ecmd->argv);
         printf(2, "exec %s failed\n", ecmd->argv[0]);
         break;
+    
 
     case REDIR:
         rcmd = (struct redircmd *)cmd;
