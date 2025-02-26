@@ -15,7 +15,10 @@
 #define RESET "\033[0m"
 
 #define MAXARGS 10
+#define MAX_HISTORY 5
 
+char history[MAX_HISTORY][100];
+int history_count = 0;
 
 char *keywords[] = {"int", "char", "if", "for", "while", "return", "void", 0};
 
