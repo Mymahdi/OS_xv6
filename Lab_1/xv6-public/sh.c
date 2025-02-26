@@ -11,7 +11,78 @@
 #define LIST  4
 #define BACK  5
 
+#define BLUE "\033[34m"
+#define RESET "\033[0m"
+
 #define MAXARGS 10
+
+
+char *keywords[] = {"int", "char", "if", "for", "while", "return", "void", 0};
+
+// Function to check if a word is a keyword
+int is_keyword(char *word) {
+  for (int i = 0; keywords[i] != 0; i++) {
+      if (strcmp(word, keywords[i]) == 0)
+          return 1;
+  }
+  return 0;
+}
+
+
+// Function to process input line
+void process_line(char *line) {
+    int i = 0, inside_comment = 0;
+    
+    printf(1,"salam\n");
+    while (line[i]) {
+        if (line[i] == '#' && !inside_comment) {
+            inside_comment = 1;
+            i++;
+            continue;
+        } else if (line[i] == '#' && inside_comment) {
+            inside_comment = 0;
+            i++;
+            continue;
+        }
+
+        if (inside_comment) {
+            i++;
+            continue;
+        }
+
+        // Extract word
+        char word[100];
+        int j = 0;
+        while (line[i] && line[i] != ' ' && line[i] != '\n') {
+            word[j++] = line[i++];
+        }
+        word[j] = '\0';
+
+        // Highlight keyword
+        if (is_keyword(word)) {
+            printf(1, BLUE "%s " RESET, word);
+        } else {
+            printf(1, "%s ", word);
+        }
+
+        i++;
+    }
+    printf(1, "\n");
+}
+
+// Modify shell input handling
+void run_command(char *cmd) {
+    if (cmd[0] == '!') {
+        printf(1, "Processed input: ");
+        process_line(cmd + 1);
+        return;
+    }
+    
+    char *argv[] = {cmd, 0};  // Argument list
+    exec(cmd, argv);
+}
+
+
 
 struct cmd {
   int type;
@@ -54,81 +125,96 @@ void panic(char*);
 struct cmd *parsecmd(char*);
 
 // Execute cmd.  Never returns.
-void
-runcmd(struct cmd *cmd)
-{
-  int p[2];
-  struct backcmd *bcmd;
-  struct execcmd *ecmd;
-  struct listcmd *lcmd;
-  struct pipecmd *pcmd;
-  struct redircmd *rcmd;
+void runcmd(struct cmd *cmd) {
+    int p[2];
+    struct backcmd *bcmd;
+    struct execcmd *ecmd;
+    struct listcmd *lcmd;
+    struct pipecmd *pcmd;
+    struct redircmd *rcmd;
 
-  if(cmd == 0)
+    if (cmd == 0)
+        exit();
+
+    switch (cmd->type) {
+    default:
+        panic("runcmd");
+
+    case EXEC:
+        ecmd = (struct execcmd *)cmd;
+        if (ecmd->argv[0] == 0)
+            exit();
+
+        if (ecmd->argv[0][0] == '!') {
+            char *word = ecmd->argv[0] + 1; // Skip '!'
+            if (is_keyword(word)) {
+                printf(1, "\033[34m%s\033[0m ", word); // Print in blue
+
+                for (int i = 1; ecmd->argv[i] != 0; i++) {
+                    printf(1, "%s ", ecmd->argv[i]);
+
+                }
+                printf(1,"\n");
+                exit();
+            }
+        }
+
+        // Execute normally if not a '!' command
+        exec(ecmd->argv[0], ecmd->argv);
+        printf(2, "exec %s failed\n", ecmd->argv[0]);
+        break;
+
+    case REDIR:
+        rcmd = (struct redircmd *)cmd;
+        close(rcmd->fd);
+        if (open(rcmd->file, rcmd->mode) < 0) {
+            printf(2, "open %s failed\n", rcmd->file);
+            exit();
+        }
+        runcmd(rcmd->cmd);
+        break;
+
+    case LIST:
+        lcmd = (struct listcmd *)cmd;
+        if (fork1() == 0)
+            runcmd(lcmd->left);
+        wait();
+        runcmd(lcmd->right);
+        break;
+
+    case PIPE:
+        pcmd = (struct pipecmd *)cmd;
+        if (pipe(p) < 0)
+            panic("pipe");
+        if (fork1() == 0) {
+            close(1);
+            dup(p[1]);
+            close(p[0]);
+            close(p[1]);
+            runcmd(pcmd->left);
+        }
+        if (fork1() == 0) {
+            close(0);
+            dup(p[0]);
+            close(p[0]);
+            close(p[1]);
+            runcmd(pcmd->right);
+        }
+        close(p[0]);
+        close(p[1]);
+        wait();
+        wait();
+        break;
+
+    case BACK:
+        bcmd = (struct backcmd *)cmd;
+        if (fork1() == 0)
+            runcmd(bcmd->cmd);
+        break;
+    }
     exit();
-
-  switch(cmd->type){
-  default:
-    panic("runcmd");
-
-  case EXEC:
-    ecmd = (struct execcmd*)cmd;
-    if(ecmd->argv[0] == 0)
-      exit();
-    exec(ecmd->argv[0], ecmd->argv);
-    printf(2, "exec %s failed\n", ecmd->argv[0]);
-    break;
-
-  case REDIR:
-    rcmd = (struct redircmd*)cmd;
-    close(rcmd->fd);
-    if(open(rcmd->file, rcmd->mode) < 0){
-      printf(2, "open %s failed\n", rcmd->file);
-      exit();
-    }
-    runcmd(rcmd->cmd);
-    break;
-
-  case LIST:
-    lcmd = (struct listcmd*)cmd;
-    if(fork1() == 0)
-      runcmd(lcmd->left);
-    wait();
-    runcmd(lcmd->right);
-    break;
-
-  case PIPE:
-    pcmd = (struct pipecmd*)cmd;
-    if(pipe(p) < 0)
-      panic("pipe");
-    if(fork1() == 0){
-      close(1);
-      dup(p[1]);
-      close(p[0]);
-      close(p[1]);
-      runcmd(pcmd->left);
-    }
-    if(fork1() == 0){
-      close(0);
-      dup(p[0]);
-      close(p[0]);
-      close(p[1]);
-      runcmd(pcmd->right);
-    }
-    close(p[0]);
-    close(p[1]);
-    wait();
-    wait();
-    break;
-
-  case BACK:
-    bcmd = (struct backcmd*)cmd;
-    if(fork1() == 0)
-      runcmd(bcmd->cmd);
-    break;
-  }
-  exit();
 }
+
 
 int
 getcmd(char *buf, int nbuf)
