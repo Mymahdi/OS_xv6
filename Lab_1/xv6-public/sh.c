@@ -32,6 +32,23 @@ int is_keyword(char *word) {
 }
 
 
+void add_to_history(char *cmd) {
+  
+  if (strlen(cmd) == 0) return;
+  if (history_count < MAX_HISTORY) {
+      strcpy(history[history_count], cmd);
+      history_count++;
+  }
+  else {
+      // Shift history up and add new command
+      for (int i = 1; i < MAX_HISTORY; i++) {
+          strcpy(history[i - 1], history[i]);
+      }
+      strcpy(history[MAX_HISTORY - 1], cmd);
+  }
+}
+
+
 // Function to process input line
 void process_line(char *line) {
     int i = 0, inside_comment = 0;
