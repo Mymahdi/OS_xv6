@@ -53,39 +53,6 @@ printint(int xx, int base, int sign)
 
 // Print to the console. only understands %d, %x, %p, %s.
 
-#define HISTORY_SIZE 5
-#define CMD_MAX_LEN  128
-
-char history[HISTORY_SIZE][CMD_MAX_LEN];
-int history_count = 0;
-
-// Store commands in history
-void add_to_history(char *cmd) {
-  if (history_count < HISTORY_SIZE) {
-    strncpy(history[history_count], cmd, CMD_MAX_LEN);
-    history_count++;
-  }
-}
-
-void show_command_history(void) {
-  consputc('\n');
-
-  char msg[] = "[Command History]\n";
-  for (int i = 0; msg[i] != '\0'; i++) {
-    consputc(msg[i]);
-  }
-
-  for (int i = 0; i < history_count; i++) {
-    char buf[CMD_MAX_LEN + 10];
-    
-    snprintf(buf, "%d: %s\n", i + 1, history[i]);
-
-    for (int j = 0; buf[j] != '\0'; j++) {
-      consputc(buf[j]);
-    }
-  }
-}
-
 void
 cprintf(char *fmt, ...)
 {
@@ -243,14 +210,12 @@ consoleintr(int (*getc)(void))
       }
       break;
 
-    case C('H'): case '\x7f':  // Backspace or Ctrl + H
-      if (input.e != input.w) {
-        input.e--;
-        consputc(BACKSPACE);
-      } else {
-        show_command_history();  // Print history if buffer is empty
-      }
-      break;
+      case C('Z'): case '\x7f':  // Backspace
+        if(input.e != input.w){
+          input.e--;
+          consputc(BACKSPACE);
+        }
+        break;
 
     default:
       if(c != 0 && input.e-input.r < INPUT_BUF){
