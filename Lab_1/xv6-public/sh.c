@@ -3,7 +3,6 @@
 #include "types.h"
 #include "user.h"
 #include "fcntl.h"
-#include "sh.h"
 
 // Parsed command representation
 #define EXEC  1
@@ -16,13 +15,6 @@
 #define RESET "\033[0m"
 
 #define MAXARGS 10
-#define CMD_LEN 128
-#define HISTORY_SIZE 10
-
-
-char history[HISTORY_SIZE][CMD_LEN];
-int history_index = 0;
-int history_count = 0;
 
 
 char *keywords[] = {"int", "char", "if", "for", "while", "return", "void", 0};
@@ -35,32 +27,6 @@ int is_keyword(char *word) {
   }
   return 0;
 }
-
-
-void add_to_history(const char *cmd) {
-  if (cmd[0] == '\0') return;  // Ignore empty commands
-
-  // Copy command to history buffer
-  int i = 0;
-  while (cmd[i] != '\0' && i < CMD_LEN - 1) {
-      history[history_index][i] = cmd[i];
-      i++;
-  }
-  history[history_index][i] = '\0';  // Null-terminate
-
-  // Update history index and count
-  history_index = (history_index + 1) % HISTORY_SIZE;
-  if (history_count < HISTORY_SIZE)
-      history_count++;
-}
-void print_history(void) {
-  printf(1, "\nCommand History:\n");
-  for (int i = 0; i < history_count; i++) {
-      int index = (history_index + i) % HISTORY_SIZE;
-      printf(1, "%d: %s\n", i + 1, history[index]);
-  }
-}
-
 
 
 // Function to process input line
@@ -177,14 +143,7 @@ void runcmd(struct cmd *cmd) {
         ecmd = (struct execcmd *)cmd;
         if (ecmd->argv[0] == 0)
             exit();
-        
-        // Check if the first argument is Ctrl + H (ASCII 8)
-        if (ecmd->argv[0][0] == '8') {  // ASCII value for Ctrl + H is 8
-          // printf(1, "Hello, World!\n");  // Print Hello, World! when Ctrl + H is pressed
-          print_history();
-          break;  // Skip further execution since Ctrl + H has been handled
-  }
-
+    
         if (ecmd->argv[0][0] == '!') {
             int in_hash = 0; // Flag to track if inside #...#
             
@@ -276,7 +235,6 @@ getcmd(char *buf, int nbuf)
   gets(buf, nbuf);
   if(buf[0] == 0) // EOF
     return -1;
-  add_to_history(buf); 
   return 0;
 }
 

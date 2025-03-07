@@ -14,7 +14,6 @@
 #include "mmu.h"
 #include "proc.h"
 #include "x86.h"
-#include "console.h"
 
 static void consputc(int);
 
@@ -52,7 +51,6 @@ printint(int xx, int base, int sign)
 //PAGEBREAK: 50
 
 // Print to the console. only understands %d, %x, %p, %s.
-
 void
 cprintf(char *fmt, ...)
 {
@@ -209,14 +207,12 @@ consoleintr(int (*getc)(void))
         consputc(BACKSPACE);
       }
       break;
-
-      case C('Z'): case '\x7f':  // Backspace
-        if(input.e != input.w){
-          input.e--;
-          consputc(BACKSPACE);
-        }
-        break;
-
+    case C('H'): case '\x7f':  // Backspace
+      if(input.e != input.w){
+        input.e--;
+        consputc(BACKSPACE);
+      }
+      break;
     default:
       if(c != 0 && input.e-input.r < INPUT_BUF){
         c = (c == '\r') ? '\n' : c;
@@ -300,4 +296,3 @@ consoleinit(void)
 
   ioapicenable(IRQ_KBD, 0);
 }
-
