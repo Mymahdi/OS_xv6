@@ -207,12 +207,12 @@ consoleintr(int (*getc)(void))
         consputc(BACKSPACE);
       }
       break;
-    case C('H'): case '\x7f':  // Backspace
-      if(input.e != input.w){
-        input.e--;
-        consputc(BACKSPACE);
-      }
-      break;
+    // case C('H'): case '\x7f':  // Backspace
+    //   if(input.e != input.w){
+    //     input.e--;
+    //     consputc(BACKSPACE);
+    //   }
+    //   break;
     default:
       if(c != 0 && input.e-input.r < INPUT_BUF){
         c = (c == '\r') ? '\n' : c;
