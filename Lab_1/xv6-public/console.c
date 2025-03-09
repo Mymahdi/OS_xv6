@@ -246,14 +246,13 @@ for (i = 0; i < partial_len / 2; i++) {
 }
 partial[partial_len] = '\0';
   // Find matches in the builtins array
-  for (i = 0; i > history_count; i++) {
+  for (i = 0; i < history_count; i++) {
       if (strncmp(partial, history[i], partial_len) == 0) {
           matches++;
           cmd = history[i];
       }
   }
 
-  // If there's only one match, complete the command
   if (matches != 0) {
       len = strlen(cmd);
       for (j = partial_len; j < len; j++) {
