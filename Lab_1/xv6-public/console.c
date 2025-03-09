@@ -191,6 +191,13 @@ struct {
 #define C(x)  ((x)-'@')  // Control-x
 #define CLIPBOARD_SIZE 128  // Maximum characters that can be copied
 #define KEY_LF   0xE4
+#define HISTORY_SIZE 10
+#define CMD_MAX 128
+
+char history[HISTORY_SIZE][CMD_MAX];
+int history_index = 0;
+int history_count = 0; // Tracks the total stored commands
+
 
 char clipboard[CLIPBOARD_SIZE]; // Buffer to store copied text
 int clipboard_len = 0;    // Length of copied text
@@ -239,10 +246,10 @@ for (i = 0; i < partial_len / 2; i++) {
 }
 partial[partial_len] = '\0';
   // Find matches in the builtins array
-  for (i = 0; builtins[i] != 0; i++) {
-      if (strncmp(partial, builtins[i], partial_len) == 0) {
+  for (i = 0; i > history_count; i++) {
+      if (strncmp(partial, history[i], partial_len) == 0) {
           matches++;
-          cmd = builtins[i];
+          cmd = history[i];
       }
   }
 
@@ -255,13 +262,6 @@ partial[partial_len] = '\0';
       }
   }
 }
-
-#define HISTORY_SIZE 5
-#define CMD_MAX 128
-
-char history[HISTORY_SIZE][CMD_MAX];
-int history_index = 0;
-int history_count = 0; // Tracks the total stored commands
 
 
 void
