@@ -269,10 +269,20 @@ partial[partial_len] = '\0';
   }
 }
 
+#define HISTORY_SIZE 5
+#define CMD_MAX 128
+
+char history[HISTORY_SIZE][CMD_MAX];
+int history_index = 0;
+int history_count = 0; // Tracks the total stored commands
+
+
 void
 consoleintr(int (*getc)(void))
 {
   int c, doprocdump = 0;
+  static int input_index = 0; // Tracks current input position
+  static char input_buffer[CMD_MAX]; // Stores input before Enter
 
   acquire(&cons.lock);
   while((c = getc()) >= 0){
@@ -287,6 +297,7 @@ consoleintr(int (*getc)(void))
         input.e--;
         consputc(BACKSPACE);
       }
+      input_index = 0; // Reset input buffer
       break;
     case KEY_LF:  // KEY_LF -> Move copy position back
       if (input.e + copy_index + 1 > input.r)
@@ -303,6 +314,8 @@ consoleintr(int (*getc)(void))
         input.e--;
         consputc(BACKSPACE);
       }
+      if (input_index > 0)
+        input_index--;
       break;
     case '\t':   // TAB  -> tab completion
       tab_completion();
@@ -313,9 +326,24 @@ consoleintr(int (*getc)(void))
         c = (c == '\r') ? '\n' : c;
         input.buf[input.e++ % INPUT_BUF] = c;
         consputc(c);
+
+        if (input_index < CMD_MAX - 1)
+          input_buffer[input_index++] = c; // Store in input buffer
+
         if(c == '\n' || c == C('D') || input.e == input.r+INPUT_BUF){
           input.w = input.e;
           wakeup(&input.r);
+
+          // Store command in history
+          if (input_index > 1) { // Ignore empty commands
+            input_buffer[input_index - 1] = '\0'; // Null-terminate
+            strncpy(history[history_index], input_buffer, CMD_MAX);
+            history[history_index][CMD_MAX - 1] = '\0';
+            history_index = (history_index + 1) % HISTORY_SIZE;
+            if (history_count < HISTORY_SIZE)
+              history_count++;
+          }
+          input_index = 0; 
         }
       }
       break;
