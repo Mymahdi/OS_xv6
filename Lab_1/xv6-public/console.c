@@ -222,12 +222,12 @@ void copy_selection() {
 
 static void tab_completion() {
   int i, j, len, matches = 0;
-  char *cmd = {'\0'};
+  char *cmd = '\0';
   char partial[INPUT_BUF];
   int partial_len = 0;
 
   // Extract the current partial command from the input buffer
-  for (i = input.e - 1; i>= 0 && i >= input.r && input.buf[i % INPUT_BUF] != ' ' && input.buf[i % INPUT_BUF] != '\n'; i--) {
+  for (i = input.e - 1; i >= 0 && i >= input.r && input.buf[i % INPUT_BUF] != ' ' && input.buf[i % INPUT_BUF] != '\n'; i--) {
     partial[partial_len++] = input.buf[i % INPUT_BUF];
 }
 
@@ -247,24 +247,11 @@ partial[partial_len] = '\0';
   }
 
   // If there's only one match, complete the command
-  if (matches == 1) {
+  if (matches != 0) {
       len = strlen(cmd);
       for (j = partial_len; j < len; j++) {
           consputc(cmd[j]);
           input.buf[input.e++ % INPUT_BUF] = cmd[j];
-      }
-  } else if (matches > 1) {
-      // If there are multiple matches, print them out
-      cprintf("\n");
-      for (i = 0; builtins[i] != 0; i++) {
-          if (strncmp(partial, builtins[i], partial_len) == 0) {
-              cprintf("%s ", builtins[i]);
-          }
-      }
-      cprintf("\n");
-      // Reprint the current input line
-      for (i = input.r; i < input.e; i++) {
-          consputc(input.buf[i % INPUT_BUF]);
       }
   }
 }
