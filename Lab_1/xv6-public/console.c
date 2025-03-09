@@ -188,6 +188,7 @@ struct {
 
 #define C(x)  ((x)-'@')  // Control-x
 #define CLIPBOARD_SIZE 128  // Maximum characters that can be copied
+#define KEY_LF   0xE4
 
 char clipboard[CLIPBOARD_SIZE]; // Buffer to store copied text
 int clipboard_len = 0;    // Length of copied text
@@ -224,10 +225,6 @@ consoleintr(int (*getc)(void))
 
   acquire(&cons.lock);
   while((c = getc()) >= 0){
-    // if (c == 27)  // Escape character
-    //   if (getc() == '[')  // Next part of escape sequence
-    //     if (getc() == 'D')
-    //         copy_index--;  // Move cursor left  
     switch(c){   
     case C('P'):  // Process listing.
       // procdump() locks cons.lock indirectly; invoke later
@@ -240,9 +237,9 @@ consoleintr(int (*getc)(void))
         consputc(BACKSPACE);
       }
       break;
-    case C('L'):  // CTRL+L -> Move copy position back
-      if (input.e + copy_index > input.r)
-          copy_index--; // Move one character back
+    case KEY_LF:  // KEY_LF -> Move copy position back
+      if (input.e + copy_index + 1 > input.r)
+          copy_index--;
       break;
     case C('C'):  // CTRL+C -> Copy selected text
       copy_selection();
