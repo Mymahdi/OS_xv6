@@ -24,6 +24,8 @@ static struct {
   int locking;
 } cons;
 
+char *builtins[] = {"cat","cd","echo","exec","forktest","grep","init","kill","ln","ls","mkdir","rm","sh","wc","zombie", 0 };
+
 static void
 printint(int xx, int base, int sign)
 {
@@ -218,6 +220,55 @@ void copy_selection() {
   copy_index2 = 0;
 }
 
+static void tab_completion() {
+  int i, j, len, matches = 0;
+  char *cmd = {'\0'};
+  char partial[INPUT_BUF];
+  int partial_len = 0;
+
+  // Extract the current partial command from the input buffer
+  for (i = input.e - 1; i>= 0 && i >= input.r && input.buf[i % INPUT_BUF] != ' ' && input.buf[i % INPUT_BUF] != '\n'; i--) {
+    partial[partial_len++] = input.buf[i % INPUT_BUF];
+}
+
+// Reverse the partial command to get it in the correct order
+for (i = 0; i < partial_len / 2; i++) {
+    char tmp = partial[i];
+    partial[i] = partial[partial_len - 1 - i];
+    partial[partial_len - 1 - i] = tmp;
+}
+partial[partial_len] = '\0';
+  // Find matches in the builtins array
+  for (i = 0; builtins[i] != 0; i++) {
+      if (strncmp(partial, builtins[i], partial_len) == 0) {
+          matches++;
+          cmd = builtins[i];
+      }
+  }
+
+  // If there's only one match, complete the command
+  if (matches == 1) {
+      len = strlen(cmd);
+      for (j = partial_len; j < len; j++) {
+          consputc(cmd[j]);
+          input.buf[input.e++ % INPUT_BUF] = cmd[j];
+      }
+  } else if (matches > 1) {
+      // If there are multiple matches, print them out
+      cprintf("\n");
+      for (i = 0; builtins[i] != 0; i++) {
+          if (strncmp(partial, builtins[i], partial_len) == 0) {
+              cprintf("%s ", builtins[i]);
+          }
+      }
+      cprintf("\n");
+      // Reprint the current input line
+      for (i = input.r; i < input.e; i++) {
+          consputc(input.buf[i % INPUT_BUF]);
+      }
+  }
+}
+
 void
 consoleintr(int (*getc)(void))
 {
@@ -253,6 +304,10 @@ consoleintr(int (*getc)(void))
     //     consputc(BACKSPACE);
     //   }
     //   break;
+    case '\t':   // TAB  -> tab completion
+      tab_completion();
+      break;
+
     default:
       if(c != 0 && input.e-input.r < INPUT_BUF){
         c = (c == '\r') ? '\n' : c;
