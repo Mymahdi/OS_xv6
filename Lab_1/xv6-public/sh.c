@@ -276,13 +276,8 @@ int getcmd(char *buf, int nbuf) {
             add_history(buf); 
             return i;
         } 
-        else if (c == 0x08 || c == 0x7F) { 
-            if (i > 0) {
-                printf(2, "\b \b"); 
-                i--;
-            } else {
+        else if (c == 0x01 || c == 0x7F) { 
                 print_history(); 
-            }
         } 
         else {
             buf[i++] = c;

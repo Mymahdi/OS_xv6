@@ -298,12 +298,12 @@ consoleintr(int (*getc)(void))
     case C('V'):  // CTRL+V -> Paste copied text
       paste_selection();
       break;
-    // case C('H'): case '\x7f':  // Backspace
-    //   if(input.e != input.w){
-    //     input.e--;
-    //     consputc(BACKSPACE);
-    //   }
-    //   break;
+    case C('H'): case '\x7f':  // Backspace
+      if(input.e != input.w){
+        input.e--;
+        consputc(BACKSPACE);
+      }
+      break;
     case '\t':   // TAB  -> tab completion
       tab_completion();
       break;
