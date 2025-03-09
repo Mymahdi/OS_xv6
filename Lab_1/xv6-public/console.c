@@ -187,6 +187,35 @@ struct {
 } input;
 
 #define C(x)  ((x)-'@')  // Control-x
+#define CLIPBOARD_SIZE 128  // Maximum characters that can be copied
+
+char clipboard[CLIPBOARD_SIZE]; // Buffer to store copied text
+int clipboard_len = 0;    // Length of copied text
+int copy_index = -1;  // Offset from the end for copying
+int copy_index2 = 0;  // Offset from the end for pasting
+
+void paste_selection() {
+  if (clipboard_len == 0) {
+      return;
+  }
+  for (int i = 0; i < clipboard_len; i++) {
+      consputc(clipboard[i]);
+      input.buf[input.e++ % INPUT_BUF] = clipboard[i];
+  }
+}
+
+void copy_selection() {
+  if (copy_index2 == 0) {
+      copy_index2 = copy_index;
+      return;
+  }
+  clipboard_len = copy_index2 - copy_index;
+  for (int i = 0; i < clipboard_len; i++) {
+    clipboard[i] = input.buf[input.e + 1 + i + copy_index % INPUT_BUF];
+}
+  copy_index = -1;
+  copy_index2 = 0;
+}
 
 void
 consoleintr(int (*getc)(void))
@@ -195,7 +224,11 @@ consoleintr(int (*getc)(void))
 
   acquire(&cons.lock);
   while((c = getc()) >= 0){
-    switch(c){
+    // if (c == 27)  // Escape character
+    //   if (getc() == '[')  // Next part of escape sequence
+    //     if (getc() == 'D')
+    //         copy_index--;  // Move cursor left  
+    switch(c){   
     case C('P'):  // Process listing.
       // procdump() locks cons.lock indirectly; invoke later
       doprocdump = 1;
@@ -212,6 +245,16 @@ consoleintr(int (*getc)(void))
         input.e--;
         consputc(BACKSPACE);
       }
+      break;
+    case C('L'):  // CTRL+L -> Move copy position back
+      if (input.e + copy_index > input.r)
+          copy_index--; // Move one character back
+      break;
+    case C('C'):  // CTRL+C -> Copy selected text
+      copy_selection();
+      break;
+    case C('V'):  // CTRL+V -> Paste copied text
+      paste_selection();
       break;
     default:
       if(c != 0 && input.e-input.r < INPUT_BUF){
