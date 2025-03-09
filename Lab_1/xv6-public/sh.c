@@ -227,16 +227,73 @@ void runcmd(struct cmd *cmd) {
 }
 
 
-int
-getcmd(char *buf, int nbuf)
-{
-  printf(2, "Mahdi-Ali-Kiani $");
-  memset(buf, 0, nbuf);
-  gets(buf, nbuf);
-  if(buf[0] == 0) // EOF
-    return -1;
-  return 0;
+#define HISTORY_SIZE 5
+#define CMD_MAX 128
+
+char history[HISTORY_SIZE][CMD_MAX]; // Stores the last 5 commands
+int history_count = 0;               // Number of stored commands
+
+void add_history(const char *cmd) {
+    if (strlen(cmd) == 0) return; // Ignore empty commands
+
+    if (history_count < HISTORY_SIZE) {
+        strcpy(history[history_count], cmd);
+        history_count++;
+    } else {
+        // Shift history up and add new command at the end
+        for (int i = 1; i < HISTORY_SIZE; i++) {
+            strcpy(history[i - 1], history[i]);
+        }
+        strcpy(history[HISTORY_SIZE - 1], cmd);
+    }
 }
+
+void print_history() {
+    printf(2, "\nLast 5 Commands:\n");
+
+    // Print history in reverse order to show most recent first
+    int start_idx = (history_count < HISTORY_SIZE) ? 0 : (history_count - HISTORY_SIZE);
+    for (int i = history_count - 1; i >= start_idx; i--) {
+        printf(2, "%d: %s\n", history_count - i, history[i]);
+    }
+    printf(2, "Mahdi-Ali-Kiani $ "); 
+}
+
+int getcmd(char *buf, int nbuf) {
+    int i = 0, cc;
+    char c;
+
+    printf(2, "Mahdi-Ali-Kiani $ ");
+
+    while (i < nbuf - 1) {
+        cc = read(0, &c, 1);
+        if (cc < 1) break;
+
+        if (c == '\n' || c == '\r') { 
+            buf[i] = '\0';
+            printf(2, "\n");
+
+            add_history(buf); 
+            return i;
+        } 
+        else if (c == 0x08 || c == 0x7F) { 
+            if (i > 0) {
+                printf(2, "\b \b"); 
+                i--;
+            } else {
+                print_history(); 
+            }
+        } 
+        else {
+            buf[i++] = c;
+            printf(2, "%c", c);
+        }
+    }
+
+    buf[i] = '\0';
+    return (i == 0) ? -1 : 0;
+}
+
 
 int
 main(void)

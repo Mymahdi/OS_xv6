@@ -240,12 +240,6 @@ consoleintr(int (*getc)(void))
         consputc(BACKSPACE);
       }
       break;
-    case C('H'): case '\x7f':  // Backspace
-      if(input.e != input.w){
-        input.e--;
-        consputc(BACKSPACE);
-      }
-      break;
     case C('L'):  // CTRL+L -> Move copy position back
       if (input.e + copy_index > input.r)
           copy_index--; // Move one character back
@@ -256,6 +250,12 @@ consoleintr(int (*getc)(void))
     case C('V'):  // CTRL+V -> Paste copied text
       paste_selection();
       break;
+    // case C('H'): case '\x7f':  // Backspace
+    //   if(input.e != input.w){
+    //     input.e--;
+    //     consputc(BACKSPACE);
+    //   }
+    //   break;
     default:
       if(c != 0 && input.e-input.r < INPUT_BUF){
         c = (c == '\r') ? '\n' : c;
