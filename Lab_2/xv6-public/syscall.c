@@ -104,6 +104,11 @@ extern int sys_wait(void);
 extern int sys_write(void);
 extern int sys_uptime(void);
 
+extern int sys_make_user_syscall(void);
+extern int sys_login_syscall(void);
+extern int sys_logout_syscall(void);
+extern int sys_get_logs_syscall(void);
+
 static int (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
 [SYS_exit]    sys_exit,
@@ -126,7 +131,26 @@ static int (*syscalls[])(void) = {
 [SYS_link]    sys_link,
 [SYS_mkdir]   sys_mkdir,
 [SYS_close]   sys_close,
+
+[SYS_make_user_syscall] = sys_make_user_syscall,
+[SYS_login_syscall]     = sys_login_syscall,
+[SYS_logout_syscall]    = sys_logout_syscall,
+[SYS_get_logs_syscall]  = sys_get_logs_syscall,
 };
+
+void log_syscall(int syscall_num) {
+  if (current_user_id == -1) return;
+
+  for (int i = 0; i < MAX_USERS; i++) {
+    if (logs[i].user_id == current_user_id || logs[i].user_id == 0) {
+      if (logs[i].user_id == 0) logs[i].user_id = current_user_id;
+      if (logs[i].count < MAX_SYSCALL_LOG) {
+        logs[i].syscalls[logs[i].count++] = syscall_num;
+      }
+      return;
+    }
+  }
+}
 
 void
 syscall(void)
@@ -137,6 +161,7 @@ syscall(void)
   num = curproc->tf->eax;
   if(num > 0 && num < NELEM(syscalls) && syscalls[num]) {
     curproc->tf->eax = syscalls[num]();
+    log_syscall(num);
   } else {
     cprintf("%d %s: unknown sys call %d\n",
             curproc->pid, curproc->name, num);
