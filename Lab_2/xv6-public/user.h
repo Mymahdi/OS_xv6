@@ -24,6 +24,12 @@ char* sbrk(int);
 int sleep(int);
 int uptime(void);
 
+int make_user_syscall(int user_id, const char* password);
+int login_syscall(int user_id, const char* password);
+int logout_syscall(void);
+int get_logs_syscall(void);
+
+
 // ulib.c
 int stat(const char*, struct stat*);
 char* strcpy(char*, const char*);

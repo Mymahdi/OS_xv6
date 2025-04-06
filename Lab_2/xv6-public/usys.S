@@ -29,3 +29,9 @@ SYSCALL(getpid)
 SYSCALL(sbrk)
 SYSCALL(sleep)
 SYSCALL(uptime)
+
+SYSCALL(make_user_syscall)
+SYSCALL(login_syscall)
+SYSCALL(logout_syscall)
+SYSCALL(get_logs_syscall)
+
