@@ -20,3 +20,8 @@
 #define SYS_link   19
 #define SYS_mkdir  20
 #define SYS_close  21
+
+#define SYS_make_user_syscall  22
+#define SYS_login_syscall      23
+#define SYS_logout_syscall     24
+#define SYS_get_logs_syscall   25
