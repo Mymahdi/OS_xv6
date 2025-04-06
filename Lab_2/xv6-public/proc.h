@@ -56,3 +56,23 @@ struct proc {
 //   original data and bss
 //   fixed-size stack
 //   expandable heap
+
+#define MAX_USERS 16
+#define MAX_SYSCALL_LOG 64
+#define MAX_PASSWORD_LEN 16
+
+struct user {
+  int id;
+  char password[MAX_PASSWORD_LEN];
+  int in_use;
+};
+
+struct syscall_log {
+  int user_id;
+  int syscalls[MAX_SYSCALL_LOG];
+  int count;
+};
+
+extern struct user users[MAX_USERS];
+extern struct syscall_log logs[MAX_USERS];
+extern int current_user_id;

@@ -532,3 +532,10 @@ procdump(void)
     cprintf("\n");
   }
 }
+
+
+struct user users[MAX_USERS];
+struct syscall_log logs[MAX_USERS];
+int current_user_id = -1;
+
+
