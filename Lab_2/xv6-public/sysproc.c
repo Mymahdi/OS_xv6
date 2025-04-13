@@ -6,6 +6,7 @@
 #include "memlayout.h"
 #include "mmu.h"
 #include "proc.h"
+#include "syscall.h"
 
 int
 sys_fork(void)
@@ -161,3 +162,30 @@ int sys_get_logs_syscall(void) {
   }
   return 0;
 }
+
+
+int is_palindrome(int n) {
+  int original = n, rev = 0;
+  while (n > 0) {
+    rev = rev * 10 + n % 10;
+    n /= 10;
+  }
+  return original == rev;
+}
+
+
+int sys_next_palindrome(void) {
+  int num;
+
+  if (argint(0, &num) < 0)
+    return -1;
+
+  int next = num + 1;
+  while (!is_palindrome(next))
+    next++;
+
+  cprintf("Next palindrome of %d is %d\n", num, next);
+  return 0;
+}
+
+
