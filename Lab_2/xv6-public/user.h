@@ -24,6 +24,8 @@ char* sbrk(int);
 int sleep(int);
 int uptime(void);
 
+int next_palindrome(int);
+
 int make_user_syscall(int user_id, const char* password);
 int login_syscall(int user_id, const char* password);
 int logout_syscall(void);
