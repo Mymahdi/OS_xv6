@@ -109,6 +109,8 @@ extern int sys_login_syscall(void);
 extern int sys_logout_syscall(void);
 extern int sys_get_logs_syscall(void);
 
+extern int sys_next_palindrome(void);
+
 static int (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
 [SYS_exit]    sys_exit,
@@ -136,6 +138,10 @@ static int (*syscalls[])(void) = {
 [SYS_login_syscall]     = sys_login_syscall,
 [SYS_logout_syscall]    = sys_logout_syscall,
 [SYS_get_logs_syscall]  = sys_get_logs_syscall,
+
+[SYS_next_palindrome]   = sys_next_palindrome,
+
+
 };
 
 void log_syscall(int syscall_num) {
