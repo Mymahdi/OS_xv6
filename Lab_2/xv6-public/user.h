@@ -31,6 +31,7 @@ int login_syscall(int user_id, const char* password);
 int logout_syscall(void);
 int get_logs_syscall(void);
 
+int diff(char *file1, char *file2);
 
 int set_sleep_syscall(int ticks);
 
