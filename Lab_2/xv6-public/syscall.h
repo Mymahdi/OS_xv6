@@ -27,3 +27,4 @@
 #define SYS_get_logs_syscall   25
 #define SYS_next_palindrome    26
 #define SYS_set_sleep_syscall  27
+#define SYS_diff               28

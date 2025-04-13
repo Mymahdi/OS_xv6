@@ -110,7 +110,7 @@ extern int sys_logout_syscall(void);
 extern int sys_get_logs_syscall(void);
 
 extern int sys_next_palindrome(void);
-
+extern int sys_diff(void);
 extern int sys_set_sleep_syscall(void);
 
 static int (*syscalls[])(void) = {
@@ -142,6 +142,8 @@ static int (*syscalls[])(void) = {
 [SYS_get_logs_syscall]  = sys_get_logs_syscall,
 
 [SYS_next_palindrome]   = sys_next_palindrome,
+
+[SYS_diff] sys_diff,
 
 [SYS_set_sleep_syscall] = sys_set_sleep_syscall,
 
