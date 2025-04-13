@@ -189,3 +189,24 @@ int sys_next_palindrome(void) {
 }
 
 
+extern uint ticks;
+extern struct spinlock tickslock;
+
+uint sleep_ticks = 0;
+
+int sys_set_sleep_syscall(void)
+{
+  int n;
+  if(argint(0, &n) < 0)
+    return -1;
+
+  acquire(&tickslock);
+  uint start = ticks;
+  while (ticks - start < n) {
+    sleep(&ticks, &tickslock);
+  }
+  release(&tickslock);
+  return 0;
+}
+
+
