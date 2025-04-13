@@ -32,6 +32,9 @@ int logout_syscall(void);
 int get_logs_syscall(void);
 
 
+int set_sleep_syscall(int ticks);
+
+
 // ulib.c
 int stat(const char*, struct stat*);
 char* strcpy(char*, const char*);
