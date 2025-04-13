@@ -16,6 +16,84 @@
 #include "file.h"
 #include "fcntl.h"
 
+
+// sysfile.c
+int
+sys_diff(void)
+{
+  char *file1, *file2;
+  if (argstr(0, &file1) < 0 || argstr(1, &file2) < 0)
+    return -1;
+
+  struct inode *ip1, *ip2;
+  struct file *f1, *f2;
+  int diff_count = 0;
+  char buf1[512], buf2[512];
+  int n1, n2;
+
+  // Look up the inodes for both files
+  begin_op();
+  if ((ip1 = namei(file1)) == 0 || (ip2 = namei(file2)) == 0) {
+    end_op();
+    return -1;
+  }
+
+  // Allocate file structures
+  f1 = filealloc();
+  f2 = filealloc();
+  if (f1 == 0 || f2 == 0) {
+    if (f1) fileclose(f1);
+    if (f2) fileclose(f2);
+    iput(ip1);
+    iput(ip2);
+    end_op();
+    return -1;
+  }
+
+  // Set up file structures for reading
+  f1->type = FD_INODE;
+  f1->ip = ip1;
+  f1->off = 0;
+  f1->readable = 1;
+  f1->writable = 0;
+
+  f2->type = FD_INODE;
+  f2->ip = ip2;
+  f2->off = 0;
+  f2->readable = 1;
+  f2->writable = 0;
+
+  // Read and compare files
+  while (1) {
+    n1 = fileread(f1, buf1, sizeof(buf1));
+    n2 = fileread(f2, buf2, sizeof(buf2));
+    if (n1 < 0 || n2 < 0) {
+      diff_count = -1;
+      break;
+    }
+    if (n1 == 0 || n2 == 0) {
+      if (n1 != n2) diff_count += (n1 > n2) ? n1 - n2 : n2 - n1;
+      break;
+    }
+
+    int min = (n1 < n2) ? n1 : n2;
+    for (int i = 0; i < min; i++) {
+      if (buf1[i] != buf2[i]) diff_count++;
+    }
+    if (n1 != n2) diff_count += (n1 > n2) ? n1 - n2 : n2 - n1;
+  }
+
+  // Clean up
+  fileclose(f1);
+  fileclose(f2);
+  iput(ip1);
+  iput(ip2);
+  end_op();
+
+  return diff_count;
+}
+
+
 // Fetch the nth word-sized system call argument as a file descriptor
 // and return both the descriptor and the corresponding struct file.
 static int
