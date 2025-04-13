@@ -183,6 +183,7 @@ UPROGS=\
 	_zombie\
 	_testlogs\
 	_palindromeTest\
+	_diffTest\
 	_sleepTest\
 
 fs.img: mkfs README $(UPROGS)
