@@ -7,6 +7,20 @@
 #include "mmu.h"
 #include "proc.h"
 
+extern int change_level(int pid, int new_class, int new_level);  // declaration
+
+int
+sys_change_level(void)
+{
+  int pid, new_class, new_level;
+
+  if (argint(0, &pid) < 0 || argint(1, &new_class) < 0 || argint(2, &new_level) < 0)
+    return -1;
+
+  return change_level(pid, new_class, new_level);
+}
+
+
 int
 sys_fork(void)
 {
