@@ -76,6 +76,12 @@ allocproc(void)
   struct proc *p;
   char *sp;
 
+  p->sched_class = CLASS_DEFAULT;
+  p->sched_level = 2;
+  p->deadline = -1;
+  p->last_scheduled_time = ticks;
+  
+
   acquire(&ptable.lock);
 
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
@@ -325,35 +331,68 @@ scheduler(void)
   struct proc *p;
   struct cpu *c = mycpu();
   c->proc = 0;
-  
+
   for(;;){
-    // Enable interrupts on this processor.
     sti();
 
-    // Loop over process table looking for process to run.
     acquire(&ptable.lock);
+
+    struct proc *selected = 0;
+    int earliest_deadline = -1;
+
+    // 1. Find Class 1 (Real-Time) process with earliest deadline
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-      if(p->state != RUNNABLE)
-        continue;
+      if(p->state != RUNNABLE) continue;
+      if(p->sched_class == CLASS_REALTIME){
+        if(earliest_deadline == -1 || p->deadline < earliest_deadline){
+          selected = p;
+          earliest_deadline = p->deadline;
+        }
+      }
+    }
 
-      // Switch to chosen process.  It is the process's job
-      // to release ptable.lock and then reacquire it
-      // before jumping back to us.
-      c->proc = p;
-      switchuvm(p);
-      p->state = RUNNING;
+    // 2. If no real-time process found, find Class 2 Level 1 (Interactive - Round Robin)
+    if(selected == 0){
+      for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+        if(p->state != RUNNABLE) continue;
+        if(p->sched_class == CLASS_INTERACTIVE && p->sched_level == 1){
+          selected = p;
+          break; // Round Robin: pick first RUNNABLE
+        }
+      }
+    }
 
-      swtch(&(c->scheduler), p->context);
+    // 3. If still none, find Class 2 Level 2 (Default - FCFS)
+    if(selected == 0){
+      uint oldest_time = -1;
+      for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+        if(p->state != RUNNABLE) continue;
+        if(p->sched_class == CLASS_DEFAULT && p->sched_level == 2){
+          if(p->last_scheduled_time < oldest_time){
+            oldest_time = p->last_scheduled_time;
+            selected = p;
+          }
+        }
+      }
+    }
+
+    // 4. If a process was selected, switch to it
+    if(selected){
+      selected->last_scheduled_time = ticks; // For FCFS tracking
+      c->proc = selected;
+      switchuvm(selected);
+      selected->state = RUNNING;
+
+      swtch(&(c->scheduler), selected->context);
       switchkvm();
 
-      // Process is done running for now.
-      // It should have changed its p->state before coming back.
       c->proc = 0;
     }
-    release(&ptable.lock);
 
+    release(&ptable.lock);
   }
 }
+
 
 // Enter scheduler.  Must hold only ptable.lock
 // and have changed proc->state. Saves and restores
