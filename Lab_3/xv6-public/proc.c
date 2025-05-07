@@ -20,6 +20,25 @@ extern void trapret(void);
 
 static void wakeup1(void *chan);
 
+int change_level(int pid, int new_class, int new_level)
+{
+  struct proc *p;
+  acquire(&ptable.lock);
+
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+    if(p->pid == pid) {
+      p->sched_class = new_class;
+      p->sched_level = new_level;
+      release(&ptable.lock);
+      return 0;
+    }
+  }
+
+  release(&ptable.lock);
+  return -1; // process not found
+}
+
+
 void
 pinit(void)
 {
@@ -76,19 +95,19 @@ allocproc(void)
   struct proc *p;
   char *sp;
 
+  
+  
+  acquire(&ptable.lock);
+  
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+  if(p->state == UNUSED)
+  goto found;
+  
+  release(&ptable.lock);
   p->sched_class = CLASS_DEFAULT;
   p->sched_level = 2;
   p->deadline = -1;
   p->last_scheduled_time = ticks;
-  
-
-  acquire(&ptable.lock);
-
-  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
-    if(p->state == UNUSED)
-      goto found;
-
-  release(&ptable.lock);
   return 0;
 
 found:
