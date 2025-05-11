@@ -7,7 +7,17 @@
 #include "mmu.h"
 #include "proc.h"
 
-extern int change_level(int pid, int new_class, int new_level);  // declaration
+int
+sys_set_deadline(void)
+{
+    int dl;
+    if(argint(0, &dl) < 0)
+      return -1;
+    struct proc *p = myproc();
+    p->sched_class = CLASS_REALTIME;
+    p->deadline = ticks + dl;
+    return 0;
+}
 
 int
 sys_change_level(void)

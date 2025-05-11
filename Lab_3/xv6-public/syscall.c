@@ -105,6 +105,8 @@ extern int sys_write(void);
 extern int sys_uptime(void);
 extern int sys_change_level(void);
 extern int sys_print_info(void);
+extern int sys_set_deadline(void);
+
 
 static int (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,

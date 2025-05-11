@@ -22,3 +22,4 @@
 #define SYS_close  21
 #define SYS_change_level 22
 #define SYS_print_info 23
+#define SYS_set_deadline 24

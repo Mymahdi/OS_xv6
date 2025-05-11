@@ -32,3 +32,4 @@ SYSCALL(uptime)
 
 SYSCALL(change_level)
 SYSCALL(print_info)
+SYSCALL(set_deadline)
