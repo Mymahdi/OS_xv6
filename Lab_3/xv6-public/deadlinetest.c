@@ -15,9 +15,9 @@ int main(void) {
 
   // switch to RR
   if (change_level(pid, 2, 1) < 0)
-    printf(1, "ERROR: change_queue failed\n");
+    printf(1, "ERROR: change_level failed\n");
   else {
-    printf(1, "change_queue to (2,1) OK\n");
+    printf(1, "change_level to (2,1) OK\n");
     print_info();
   }
 
