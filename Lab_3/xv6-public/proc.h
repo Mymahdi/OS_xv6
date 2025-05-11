@@ -11,9 +11,9 @@ struct cpu {
 };
 
 enum sched_class {
+  CLASS_DEFAULT,
   CLASS_REALTIME,
-  CLASS_INTERACTIVE,
-  CLASS_DEFAULT
+  CLASS_INTERACTIVE
 };
 
 int print_info(void);

@@ -189,10 +189,6 @@ allocproc(void)
   goto found;
   
   release(&ptable.lock);
-  p->sched_class = CLASS_DEFAULT;
-  p->sched_level = 2;
-  p->deadline = -1;
-  p->last_scheduled_time = ticks;
   return 0;
 
 found:
@@ -200,6 +196,11 @@ found:
   p->pid = nextpid++;
 
   release(&ptable.lock);
+  
+  p->sched_class = CLASS_DEFAULT;
+  p->sched_level = 2;
+  p->deadline = -1;
+  p->last_scheduled_time = ticks;
 
   // Allocate kernel stack.
   if((p->kstack = kalloc()) == 0){
