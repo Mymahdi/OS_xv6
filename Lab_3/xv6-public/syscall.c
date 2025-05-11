@@ -133,6 +133,7 @@ static int (*syscalls[])(void) = {
 
 [SYS_change_level] sys_change_level,
 [SYS_print_info] sys_print_info,
+[SYS_set_deadline] sys_set_deadline,
 };
 
 void

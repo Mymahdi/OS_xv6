@@ -183,6 +183,7 @@ UPROGS=\
 	_zombie\
 	_changetest\
 	_printTest\
+	_deadlinetest\
 
 fs.img: mkfs README $(UPROGS)
 	./mkfs fs.img README $(UPROGS)
