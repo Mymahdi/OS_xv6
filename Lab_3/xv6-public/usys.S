@@ -31,3 +31,4 @@ SYSCALL(sleep)
 SYSCALL(uptime)
 
 SYSCALL(change_level)
+SYSCALL(print_info)

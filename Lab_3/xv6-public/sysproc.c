@@ -20,6 +20,9 @@ sys_change_level(void)
   return change_level(pid, new_class, new_level);
 }
 
+int sys_print_info(void) {
+  return print_info();
+}
 
 int
 sys_fork(void)

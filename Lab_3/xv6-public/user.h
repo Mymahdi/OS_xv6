@@ -24,6 +24,7 @@ char* sbrk(int);
 int sleep(int);
 int uptime(void);
 int change_level(int pid, int new_class, int new_level);
+int print_info(void);
 
 // ulib.c
 int stat(const char*, struct stat*);
