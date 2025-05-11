@@ -7,6 +7,8 @@
 int
 main(void)
 {
+  int father = getpid();
+  printf(1, "[%d] I'm main\n", father);
   int i;
   for (i = 0; i < NUM_PROCS; i++) {
     int pid = fork();
