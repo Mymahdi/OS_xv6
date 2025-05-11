@@ -10,7 +10,7 @@
 struct {
   struct spinlock lock;
   struct proc proc[NPROC];
-} ptable;
+} ptable;  
 
 static struct proc *initproc;
 
@@ -19,6 +19,22 @@ extern void forkret(void);
 extern void trapret(void);
 
 static void wakeup1(void *chan);
+
+
+
+void pad_space(int count) {
+  for (int i = 0; i < count; i++) cprintf(" ");
+}
+
+int num_digits(int num) {
+  if (num == 0) return 1;
+  int len = 0;
+  while (num != 0) {
+    num /= 10;
+    len++;
+  }
+  return len;
+}
 
 int change_level(int pid, int new_class, int new_level)
 {
@@ -36,6 +52,75 @@ int change_level(int pid, int new_class, int new_level)
 
   release(&ptable.lock);
   return -1; // process not found
+}
+
+
+int print_info(void) {
+  static char *states[] = {
+      [UNUSED]    "unused",
+      [EMBRYO]    "embryo",
+      [SLEEPING]  "sleep",
+      [RUNNABLE]  "runnable",
+      [RUNNING]   "running",
+      [ZOMBIE]    "zombie"
+  };
+
+  static int col_widths[] = {16, 8, 12, 18, 18, 10, 10, 12, 15};  // Adjust column widths as needed
+
+  acquire(&ptable.lock);
+  
+  cprintf("Name           PID     Status    Class      Algorithm  Wait  Deadline   Consecutive  Entry\n");
+  cprintf("----------------------------------------------------------------------------------------------------------\n");
+
+  struct proc *p;
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+      if(p->state == UNUSED)
+          continue;
+      
+      const char *state;
+      if(p->state >= 0 && p->state < NELEM(states) && states[p->state])
+          state = states[p->state];
+      else
+          state = "???";
+
+      cprintf("%s", p->name);
+      pad_space(col_widths[0] - strlen(p->name));
+
+      cprintf("%d", p->pid);
+      pad_space(col_widths[1] - num_digits(p->pid));
+
+      cprintf("%s", state);
+      pad_space(col_widths[2] - strlen(state));
+
+      cprintf("%s", (p->sched_class == CLASS_REALTIME) ? "Real-Time" : "Normal");
+      pad_space(col_widths[3] - 12);
+
+      if (p->sched_class == CLASS_REALTIME) {
+          cprintf("EDF");
+      } else if (p->sched_class == CLASS_INTERACTIVE) {
+          cprintf("RR");
+      } else {
+          cprintf("FCFS");
+      }
+      pad_space(col_widths[4] - 9);
+
+      cprintf("%d", p->wait_time);
+      pad_space(col_widths[6] - num_digits(p->wait_time));
+
+      cprintf("%d", p->deadline);
+      pad_space(col_widths[7] - num_digits(p->deadline));
+
+      cprintf("%d", p->ticks_used);
+      pad_space(col_widths[9] - num_digits(p->ticks_used));
+
+      cprintf("%d", p->entry_time_to_queue);
+      pad_space(col_widths[10] - num_digits(p->entry_time_to_queue));
+
+      cprintf("\n");
+  }
+
+  release(&ptable.lock);
+  return 0;
 }
 
 

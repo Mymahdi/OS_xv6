@@ -16,6 +16,7 @@ enum sched_class {
   CLASS_DEFAULT
 };
 
+int print_info(void);
 
 extern struct cpu cpus[NCPU];
 extern int ncpu;
@@ -61,6 +62,10 @@ struct proc {
   int sched_level; // For CLASS_INTERACTIVE: 1 (RR), for CLASS_DEFAULT: 2 (FCFS)
   int deadline;    // Only used for CLASS_REALTIME
   uint last_scheduled_time; // To help with FCFS or EDF
+
+  int ticks_used;            // Consecutive Ticks (same as "rtime")
+  int wait_time;             // Wait Time (not part of your original struct)
+  int entry_time_to_queue;
   
 };
 
