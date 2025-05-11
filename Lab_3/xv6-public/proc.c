@@ -68,11 +68,11 @@ int print_info(void) {
       [ZOMBIE]    "zombie"
   };
 
-  static int col_widths[] = {16, 8, 12, 18, 18, 10, 10, 12, 15, 10};  // Adjust column widths as needed
+  static int col_widths[] = {16, 8, 12, 18, 18, 10, 10, 12, 15, 12};  // Adjust column widths as needed
 
   acquire(&ptable.lock);
   
-  cprintf("Name            PID     Status      Class          Algorithm    Wait      Deadline   Consecutive  Entry\n");
+  cprintf("Name            PID     Status      Class          Algorithm    Wait      Deadline    Consecutive  Entry\n");
   cprintf("----------------------------------------------------------------------------------------------------------\n");
 
   struct proc *p;
@@ -431,7 +431,7 @@ wait(void)
 //  - swtch to start running that process
 //  - eventually that process transfers control
 //      via swtch back to the scheduler.
-// Updated xv6 scheduler with EDF, RR, FCFS, and aging (queue promotion)
+// Optimized xv6 scheduler with single-pass selection loop and aging
 void
 scheduler(void)
 {
@@ -439,81 +439,85 @@ scheduler(void)
   struct cpu *c = mycpu();
   c->proc = 0;
 
-  // Round Robin pointer for interactive queue
-  static int rr_index = 0;
-  const uint AGING_THRESHOLD = 800; // ticks before promoting
+  static int rr_index = 0;        // Round Robin start index for interactive
+  const uint AGING_THRESHOLD = 800; // ticks before promoting from DEFAULT to INTERACTIVE
 
   for(;;){
     sti();
-    
+
     acquire(&ptable.lock);
 
     // Aging: promote DEFAULT processes to INTERACTIVE if starved
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+      if(p->state == RUNNABLE && p->sched_class == CLASS_DEFAULT &&
+         ticks - p->last_scheduled_time >= AGING_THRESHOLD) {
+        p->sched_class = CLASS_INTERACTIVE;
+        p->last_scheduled_time = ticks;
+        cprintf("PID %d: Promoted DEFAULT to INTERACTIVE (aging)\n", p->pid);
+      }
+    }
+
+    // Single-pass selection variables
+    struct proc *best_rt = 0;
+    int earliest_deadline = -1;
+    struct proc *best_ix_after = 0, *best_ix_wrap = 0;
+    struct proc *best_def = 0;
+    uint oldest_default = ticks;
+
+    // Single scan for all classes
+    for(int idx = 0; idx < NPROC; idx++) {
+      p = &ptable.proc[idx];
       if(p->state != RUNNABLE)
         continue;
-      if(p->sched_class == CLASS_DEFAULT){
-        if(ticks - p->last_scheduled_time >= AGING_THRESHOLD){
-          p->sched_class = CLASS_INTERACTIVE;
-          cprintf("PID %d: Queue 2 to 1 (aging)\n", p->pid);
-          // reset last_scheduled_time to avoid immediate re-promotion
-          p->last_scheduled_time = ticks;
+
+      // Real-Time: choose earliest deadline
+      if(p->sched_class == CLASS_REALTIME) {
+        if(best_rt == 0 || p->deadline < earliest_deadline) {
+          best_rt = p;
+          earliest_deadline = p->deadline;
         }
-      }
-    }
-
-    struct proc *selected = 0;
-    int earliest_deadline = -1;
-
-    // 1. Real-Time (EDF)
-    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-      if(p->state != RUNNABLE || p->sched_class != CLASS_REALTIME)
         continue;
-      if(earliest_deadline < 0 || p->deadline < earliest_deadline){
-        selected = p;
-        earliest_deadline = p->deadline;
       }
-    }
 
-    // 2. Interactive (Round Robin) if no real-time
-    if(selected == 0){
-      int count = 0;
-      int start = rr_index;
-      // search at most NPROC
-      for(count = 0; count < NPROC; count++){
-        int idx = (start + count) % NPROC;
-        p = &ptable.proc[idx];
-        if(p->state == RUNNABLE && p->sched_class == CLASS_INTERACTIVE){
-          selected = p;
-          rr_index = (idx + 1) % NPROC;
-          break;
+      // Interactive: Round Robin right after rr_index
+      if(p->sched_class == CLASS_INTERACTIVE) {
+        if(idx >= rr_index) {
+          if(best_ix_after == 0)
+            best_ix_after = p;
+        } else if(best_ix_wrap == 0) {
+          best_ix_wrap = p;
+        }
+        continue;
+      }
+
+      // Default: FCFS oldest last_scheduled_time
+      if(p->sched_class == CLASS_DEFAULT) {
+        if(p->last_scheduled_time < oldest_default) {
+          oldest_default = p->last_scheduled_time;
+          best_def = p;
         }
       }
     }
 
-    // 3. Default (FCFS)
-    if(selected == 0){
-      uint oldest = ticks;
-      for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-        if(p->state != RUNNABLE || p->sched_class != CLASS_DEFAULT)
-          continue;
-        if(p->last_scheduled_time < oldest){
-          oldest = p->last_scheduled_time;
-          selected = p;
-        }
-      }
+    // Decide which to run by priority
+    struct proc *selected = 0;
+    if(best_rt) {
+      selected = best_rt;
+    } else if(best_ix_after || best_ix_wrap) {
+      selected = best_ix_after ? best_ix_after : best_ix_wrap;
+      // update rr_index for next
+      rr_index = (selected - ptable.proc + 1) % NPROC;
+    } else if(best_def) {
+      selected = best_def;
     }
 
-    // 4. Run the selected process
-    if(selected){
-      // Update scheduling info
-      if(selected->sched_class == CLASS_DEFAULT || selected->sched_class == CLASS_INTERACTIVE)
+    // Run selected process
+    if(selected) {
+      if(selected->sched_class != CLASS_REALTIME)
         selected->last_scheduled_time = ticks;
-
       c->proc = selected;
       switchuvm(selected);
       selected->state = RUNNING;
-
       swtch(&(c->scheduler), selected->context);
       switchkvm();
       c->proc = 0;
@@ -522,6 +526,7 @@ scheduler(void)
     release(&ptable.lock);
   }
 }
+
 
 
 // Enter scheduler.  Must hold only ptable.lock
