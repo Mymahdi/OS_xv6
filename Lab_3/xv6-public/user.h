@@ -23,7 +23,7 @@ int getpid(void);
 char* sbrk(int);
 int sleep(int);
 int uptime(void);
-int change_level(int pid, int new_class, int new_level);
+int change_level(int pid, int new_class);
 int print_info(void);
 
 // ulib.c

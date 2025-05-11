@@ -36,7 +36,7 @@ int num_digits(int num) {
   return len;
 }
 
-int change_level(int pid, int new_class, int new_level)
+int change_level(int pid, int new_class)
 {
   struct proc *p;
   acquire(&ptable.lock);
@@ -44,7 +44,6 @@ int change_level(int pid, int new_class, int new_level)
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
     if(p->pid == pid) {
       p->sched_class = new_class;
-      p->sched_level = new_level;
       release(&ptable.lock);
       return 0;
     }
@@ -196,9 +195,8 @@ found:
   p->pid = nextpid++;
 
   release(&ptable.lock);
-  
+
   p->sched_class = CLASS_DEFAULT;
-  p->sched_level = 2;
   p->deadline = -1;
   p->last_scheduled_time = ticks;
 
@@ -460,7 +458,7 @@ scheduler(void)
     if(selected == 0){
       for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
         if(p->state != RUNNABLE) continue;
-        if(p->sched_class == CLASS_INTERACTIVE && p->sched_level == 1){
+        if(p->sched_class == CLASS_INTERACTIVE){
           selected = p;
           break; // Round Robin: pick first RUNNABLE
         }
@@ -472,7 +470,7 @@ scheduler(void)
       uint oldest_time = -1;
       for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
         if(p->state != RUNNABLE) continue;
-        if(p->sched_class == CLASS_DEFAULT && p->sched_level == 2){
+        if(p->sched_class == CLASS_DEFAULT){
           if(p->last_scheduled_time < oldest_time){
             oldest_time = p->last_scheduled_time;
             selected = p;

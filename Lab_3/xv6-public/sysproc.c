@@ -22,12 +22,12 @@ sys_set_deadline(void)
 int
 sys_change_level(void)
 {
-  int pid, new_class, new_level;
+  int pid, new_class;
 
-  if (argint(0, &pid) < 0 || argint(1, &new_class) < 0 || argint(2, &new_level) < 0)
+  if (argint(0, &pid) < 0 || argint(1, &new_class) < 0)
     return -1;
 
-  return change_level(pid, new_class, new_level);
+  return change_level(pid, new_class);
 }
 
 int sys_print_info(void) {

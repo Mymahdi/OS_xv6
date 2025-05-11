@@ -59,7 +59,6 @@ struct proc {
   char name[16];               // Process name (debugging)
 
   enum sched_class sched_class;
-  int sched_level; // For CLASS_INTERACTIVE: 1 (RR), for CLASS_DEFAULT: 2 (FCFS)
   int deadline;    // Only used for CLASS_REALTIME
   uint last_scheduled_time; // To help with FCFS or EDF
 
