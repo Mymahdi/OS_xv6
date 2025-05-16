@@ -113,8 +113,8 @@ int print_info(void) {
       cprintf("%d", p->deadline);
       pad_space(col_widths[7] - num_digits(p->deadline));
 
-      cprintf("%d", p->ticks_used);
-      pad_space(col_widths[9] - num_digits(p->ticks_used));
+      cprintf("%d", p->consecutive_ticks);
+      pad_space(col_widths[9] - num_digits(p->consecutive_ticks));
 
       cprintf("%d", p->entry_time_to_queue);
 
@@ -200,8 +200,9 @@ found:
   release(&ptable.lock);
 
   p->sched_class = CLASS_DEFAULT;
-  p->deadline = -1;
   p->last_scheduled_time = ticks;
+  p->entry_time_to_queue = ticks;
+  p->deadline = ticks + 50;
 
   // Allocate kernel stack.
   if((p->kstack = kalloc()) == 0){
