@@ -23,15 +23,15 @@ main(void)
       if (i < 2) {
         // First 3 -> EDF
         set_deadline(20 + i * 10); // deadlines: 20, 30, 40
-        printf(1, "[%d] I'm EDF with deadline %d\n", me, 20 + i * 10);
+        // printf(1, "[%d] I'm EDF with deadline %d\n", me, 20 + i * 10);
       } else if (i < 6) {
         // Next 3 -> RR
         change_level(me, 2);
-        printf(1, "[%d] I'm RR\n", me);
+        // printf(1, "[%d] I'm RR\n", me);
       } else {
         // Last 3 -> FCFS
         change_level(me, 0);
-        printf(1, "[%d] I'm FCFS\n", me);
+        // printf(1, "[%d] I'm FCFS\n", me);
       }
       exit();
     }
