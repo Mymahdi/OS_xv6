@@ -204,6 +204,9 @@ found:
   p->entry_time_to_queue = ticks;
   p->deadline = ticks + 50;
 
+  p->wait_time = 0;
+  p->consecutive_ticks = 0;
+
   // Allocate kernel stack.
   if((p->kstack = kalloc()) == 0){
     p->state = UNUSED;
@@ -448,12 +451,18 @@ scheduler(void)
 
     acquire(&ptable.lock);
 
+    for (struct proc *wp = ptable.proc; wp < &ptable.proc[NPROC]; wp++) {
+      if (wp->state == RUNNABLE)
+        wp->wait_time++;
+    }
+
     // Aging: promote DEFAULT processes to INTERACTIVE if starved
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
       if(p->state == RUNNABLE && p->sched_class == CLASS_DEFAULT &&
          ticks - p->last_scheduled_time >= AGING_THRESHOLD) {
         p->sched_class = CLASS_INTERACTIVE;
         p->last_scheduled_time = ticks;
+        p->wait_time++;
         cprintf("PID %d: Promoted DEFAULT to INTERACTIVE (aging)\n", p->pid);
       }
     }
@@ -517,6 +526,12 @@ scheduler(void)
       if(selected->sched_class != CLASS_REALTIME)
         selected->last_scheduled_time = ticks;
       c->proc = selected;
+
+      for (struct proc *p2 = ptable.proc; p2 < &ptable.proc[NPROC]; p2++) {
+        if (p2 != selected && p2->state == RUNNABLE)
+          p2->consecutive_ticks = 0;
+      }
+
       switchuvm(selected);
       selected->state = RUNNING;
       swtch(&(c->scheduler), selected->context);

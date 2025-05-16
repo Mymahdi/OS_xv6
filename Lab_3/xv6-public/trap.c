@@ -52,6 +52,9 @@ trap(struct trapframe *tf)
       acquire(&tickslock);
       ticks++;
       wakeup(&ticks);
+      if(myproc() && myproc()->state == RUNNING)
+        myproc()->consecutive_ticks++;
+
       release(&tickslock);
     }
     lapiceoi();

@@ -62,7 +62,7 @@ struct proc {
   int deadline;    // Only used for CLASS_REALTIME
   uint last_scheduled_time; // To help with FCFS or EDF
 
-  int ticks_used;            // Consecutive Ticks (same as "rtime")
+  int consecutive_ticks;            // Consecutive Ticks (same as "rtime")
   int wait_time;             // Wait Time (not part of your original struct)
   int entry_time_to_queue;
   
