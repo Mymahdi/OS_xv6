@@ -6,6 +6,42 @@
 #include "memlayout.h"
 #include "mmu.h"
 #include "proc.h"
+#include "semaphore.h"
+
+int
+sys_sem_init(void)
+{
+  int id, value;
+  if (argint(0, &id) < 0)
+    return -1;
+  if (argint(1, &value) < 0)
+    return -1;
+
+  return sem_init(id, value);
+}
+
+int
+sys_sem_wait(void)
+{
+  int id;
+  if (argint(0, &id) < 0)
+    return -1;
+
+  sem_wait(id);
+  return 0;
+}
+
+int
+sys_sem_signal(void)
+{
+  int id;
+  if (argint(0, &id) < 0)
+    return -1;
+
+  sem_signal(id);
+  return 0;
+}
+
 
 int
 sys_fork(void)
