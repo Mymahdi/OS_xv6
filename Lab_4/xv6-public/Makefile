@@ -183,6 +183,7 @@ UPROGS=\
 	_wc\
 	_zombie\
 	_semTest\
+	_testrwlock\
 
 fs.img: mkfs README $(UPROGS)
 	./mkfs fs.img README $(UPROGS)
