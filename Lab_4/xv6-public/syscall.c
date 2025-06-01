@@ -112,6 +112,10 @@ extern int sys_inc_waiting_count(void);
 extern int sys_dec_waiting_count(void);
 extern int sys_enqueue_customer_id(void);
 extern int sys_dequeue_customer_id(void);
+extern int sys_init_rw_lock(void);
+extern int sys_get_rw_pattern(void);
+
+
 
 static int (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
@@ -144,6 +148,10 @@ static int (*syscalls[])(void) = {
 [SYS_get_waiting_count] sys_get_waiting_count,
 [SYS_inc_waiting_count] sys_inc_waiting_count,
 [SYS_dec_waiting_count] sys_dec_waiting_count,
+
+[SYS_init_rw_lock]    sys_init_rw_lock,
+[SYS_get_rw_pattern]  sys_get_rw_pattern,
+
 
 };
 

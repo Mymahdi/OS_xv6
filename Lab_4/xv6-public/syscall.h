@@ -28,3 +28,5 @@
 #define SYS_dec_waiting_count  27 
 #define SYS_enqueue_customer_id  28
 #define SYS_dequeue_customer_id  29
+#define SYS_init_rw_lock 30
+#define SYS_get_rw_pattern 31

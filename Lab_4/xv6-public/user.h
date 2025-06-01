@@ -29,6 +29,10 @@ int dec_waiting_count(void);
 int enqueue_customer_id(int);
 int dequeue_customer_id(void);
 
+int init_rw_lock(void);
+int get_rw_pattern(int pattern);
+
+
 // ulib.c
 int stat(const char*, struct stat*);
 char* strcpy(char*, const char*);
