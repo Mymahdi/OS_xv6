@@ -187,3 +187,93 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+
+int shared_data = 0;
+
+
+struct rwlock {
+  struct spinlock lock;
+  int readers;
+  int writers;
+  int waiting_writers;
+  int waiting_readers;
+};
+
+struct rwlock rwlock;
+
+int sys_init_rw_lock(void)
+{
+  initlock(&rwlock.lock, "rwlock");
+  acquire(&rwlock.lock);
+  rwlock.readers = 0;
+  rwlock.writers = 0;
+  rwlock.waiting_writers = 0;
+  rwlock.waiting_readers = 0;
+  release(&rwlock.lock);
+  return 0;
+}
+
+int sys_get_rw_pattern(void)
+{
+  int pattern;
+  if (argint(0, &pattern) < 0)
+    return -1;
+
+  int found_first_one = 0;
+
+  for (int i = 31; i >= 0; i--) {
+    int op = (pattern >> i) & 1;
+
+    if (!found_first_one) {
+      if (op == 1) {
+       
+        found_first_one = 1;
+      }
+      continue; 
+    }
+
+    if (op == 0) {
+      // Read
+      acquire(&rwlock.lock);
+      while (rwlock.writers > 0 || rwlock.waiting_writers > 0) {
+        rwlock.waiting_readers++;
+        sleep(&rwlock.readers, &rwlock.lock);
+        rwlock.waiting_readers--;
+      }
+      rwlock.readers++;
+      release(&rwlock.lock);
+
+      cprintf("Reading shared data: %d\n", shared_data);
+
+      acquire(&rwlock.lock);
+      rwlock.readers--;
+      if (rwlock.readers == 0 && rwlock.waiting_writers > 0)
+        wakeup(&rwlock.writers);
+      release(&rwlock.lock);
+
+    } else {
+      // Write
+      acquire(&rwlock.lock);
+      rwlock.waiting_writers++;
+      while (rwlock.readers > 0 || rwlock.writers > 0) {
+        sleep(&rwlock.writers, &rwlock.lock);
+      }
+      rwlock.waiting_writers--;
+      rwlock.writers++;
+      release(&rwlock.lock);
+
+      shared_data++;
+      cprintf("Writing to shared data: %d\n", shared_data);
+
+      acquire(&rwlock.lock);
+      rwlock.writers--;
+      if (rwlock.waiting_writers > 0)
+        wakeup(&rwlock.writers);
+      else if (rwlock.waiting_readers > 0)
+        wakeup(&rwlock.readers);
+      release(&rwlock.lock);
+    }
+  }
+
+  return 0;
+}
