@@ -7,6 +7,8 @@
 #include "proc.h"
 #include "spinlock.h"
 
+#define MAX_QUEUE_SIZE 6
+
 struct {
   struct spinlock lock;
   struct proc proc[NPROC];
@@ -22,11 +24,19 @@ static void wakeup1(void *chan);
 int shared_waiting_customers; 
 struct spinlock waiting_lock; 
 
+int customer_id_queue[MAX_QUEUE_SIZE];
+int queue_head;
+int queue_tail;
+struct spinlock queue_lock;
 
 void barber_state_init(void)
 {
   initlock(&waiting_lock, "waiting_lock");
   shared_waiting_customers = 0;
+
+  initlock(&queue_lock, "queue_lock");
+  queue_head = 0;
+  queue_tail = 0;
 }
 
 void
