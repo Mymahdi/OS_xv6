@@ -19,6 +19,15 @@ extern void forkret(void);
 extern void trapret(void);
 
 static void wakeup1(void *chan);
+int shared_waiting_customers; 
+struct spinlock waiting_lock; 
+
+
+void barber_state_init(void)
+{
+  initlock(&waiting_lock, "waiting_lock");
+  shared_waiting_customers = 0;
+}
 
 void
 pinit(void)

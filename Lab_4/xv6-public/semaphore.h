@@ -3,7 +3,7 @@
 
 #include "spinlock.h"
 #define MAX_SEMAPHORES  10
-
+#define NSEMS 5
 struct semaphore {
   int value;             
   struct spinlock lock;  
