@@ -26,3 +26,5 @@
 #define SYS_get_waiting_count  25
 #define SYS_inc_waiting_count  26 
 #define SYS_dec_waiting_count  27 
+#define SYS_enqueue_customer_id  28
+#define SYS_dequeue_customer_id  29

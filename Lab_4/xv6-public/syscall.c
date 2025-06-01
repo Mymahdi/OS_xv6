@@ -110,6 +110,8 @@ extern int sys_sem_signal(void);
 extern int sys_get_waiting_count(void);
 extern int sys_inc_waiting_count(void);
 extern int sys_dec_waiting_count(void);
+extern int sys_enqueue_customer_id(void);
+extern int sys_dequeue_customer_id(void);
 
 static int (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
@@ -133,6 +135,8 @@ static int (*syscalls[])(void) = {
 [SYS_link]    sys_link,
 [SYS_mkdir]   sys_mkdir,
 [SYS_close]   sys_close,
+[SYS_enqueue_customer_id] sys_enqueue_customer_id,
+[SYS_dequeue_customer_id] sys_dequeue_customer_id,
 
 [SYS_sem_init]   sys_sem_init,
 [SYS_sem_wait]   sys_sem_wait,

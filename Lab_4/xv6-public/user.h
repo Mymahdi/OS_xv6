@@ -26,6 +26,8 @@ int uptime(void);
 int get_waiting_count(void);
 int inc_waiting_count(void);
 int dec_waiting_count(void);
+int enqueue_customer_id(int);
+int dequeue_customer_id(void);
 
 // ulib.c
 int stat(const char*, struct stat*);
