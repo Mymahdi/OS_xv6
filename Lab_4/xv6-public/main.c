@@ -5,6 +5,7 @@
 #include "mmu.h"
 #include "proc.h"
 #include "x86.h"
+#include "semaphore.h"
 
 static void startothers(void);
 static void mpmain(void)  __attribute__((noreturn));
@@ -14,11 +15,23 @@ extern char end[]; // first address after kernel loaded from ELF file
 // Bootstrap processor starts running C code here.
 // Allocate a real stack and switch to it, first
 // doing some setup required for memory allocator to work.
-int
-main(void)
+
+extern void barber_state_init(void);
+
+void sem_init_all(void)
+{
+  for (int i = 0; i < NSEMS; i++) {
+    sem_init(i, 0); // Initialize all semaphores to 0
+  }
+}
+
+
+int main(void)
 {
   kinit1(end, P2V(4*1024*1024)); // phys page allocator
   kvmalloc();      // kernel page table
+  sem_init_all();  // Your semaphore initialization
+  barber_state_init(); // Initialize barber shared state
   mpinit();        // detect other processors
   lapicinit();     // interrupt controller
   seginit();       // segment descriptors
