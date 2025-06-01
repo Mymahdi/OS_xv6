@@ -107,6 +107,9 @@ extern int sys_uptime(void);
 extern int sys_sem_init(void);
 extern int sys_sem_wait(void);
 extern int sys_sem_signal(void);
+extern int sys_get_waiting_count(void);
+extern int sys_inc_waiting_count(void);
+extern int sys_dec_waiting_count(void);
 
 static int (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
@@ -134,6 +137,9 @@ static int (*syscalls[])(void) = {
 [SYS_sem_init]   sys_sem_init,
 [SYS_sem_wait]   sys_sem_wait,
 [SYS_sem_signal] sys_sem_signal,
+[SYS_get_waiting_count] sys_get_waiting_count,
+[SYS_inc_waiting_count] sys_inc_waiting_count,
+[SYS_dec_waiting_count] sys_dec_waiting_count,
 
 };
 

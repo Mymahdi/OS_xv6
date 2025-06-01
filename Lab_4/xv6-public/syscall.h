@@ -23,3 +23,6 @@
 #define SYS_sem_init   22
 #define SYS_sem_wait   23
 #define SYS_sem_signal 24
+#define SYS_get_waiting_count  25
+#define SYS_inc_waiting_count  26 
+#define SYS_dec_waiting_count  27 

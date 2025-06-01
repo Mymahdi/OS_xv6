@@ -8,6 +8,40 @@
 #include "proc.h"
 #include "semaphore.h"
 
+
+
+extern int shared_waiting_customers; 
+extern struct spinlock waiting_lock;
+
+int
+sys_get_waiting_count(void)
+{
+  acquire(&waiting_lock);
+  int count = shared_waiting_customers;
+  release(&waiting_lock);
+  return count;
+}
+
+int
+sys_inc_waiting_count(void)
+{
+  acquire(&waiting_lock);
+  shared_waiting_customers++;
+  int count = shared_waiting_customers; 
+  release(&waiting_lock);
+  return count;
+}
+
+int
+sys_dec_waiting_count(void)
+{
+  acquire(&waiting_lock);
+  shared_waiting_customers--;
+  int count = shared_waiting_customers; 
+  release(&waiting_lock);
+  return count;
+}
+
 int
 sys_sem_init(void)
 {
