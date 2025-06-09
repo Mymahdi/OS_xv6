@@ -7,22 +7,6 @@
 #include "mmu.h"
 #include "proc.h"
 
-
-int sys_open_shared_mem(void) {
-  int id;
-  if (argint(0, &id) < 0)
-    return -1;
-  return open_shared_mem(id);
-}
-
-int sys_close_shared_mem(void) {
-  int id;
-  if (argint(0, &id) < 0)
-    return -1;
-  return close_shared_mem(id);
-}
-
-
 int
 sys_fork(void)
 {
