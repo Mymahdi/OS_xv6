@@ -24,6 +24,13 @@ char* sbrk(int);
 int sleep(int);
 int uptime(void);
 
+int open_shared_mem(int id);
+int close_shared_mem(int id);
+int monitor_init(int shared_mem_id, int* initial_value, int size_value);
+int monitor_increase_all_elems(int shared_mem_id);
+int monitor_close_shared_mem(int shared_mem_id);
+int monitor_read_shared_mem(int shared_memory_id, int* data);
+
 // ulib.c
 int stat(const char*, struct stat*);
 char* strcpy(char*, const char*);

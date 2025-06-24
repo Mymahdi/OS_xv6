@@ -20,3 +20,9 @@
 #define SYS_link   19
 #define SYS_mkdir  20
 #define SYS_close  21
+#define SYS_open_shared_mem         22
+#define SYS_close_shared_mem        23
+#define SYS_monitor_init            24
+#define SYS_monitor_increase_all_elems 25
+#define SYS_monitor_close_shared_mem 26
+#define SYS_monitor_read_shared_mem  27

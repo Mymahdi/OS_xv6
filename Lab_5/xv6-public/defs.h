@@ -185,6 +185,13 @@ void            switchuvm(struct proc*);
 void            switchkvm(void);
 int             copyout(pde_t*, uint, void*, uint);
 void            clearpteu(pde_t *pgdir, char *uva);
+int             shm_open(int);
+int             shm_close(int);
+void            shminit(void);
+int             shm_monitor_init(int, int*, int);
+int             shm_monitor_increase(int);
+int             shm_monitor_read(int, int*);
+
 
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x)/sizeof((x)[0]))

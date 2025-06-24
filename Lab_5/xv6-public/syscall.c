@@ -103,6 +103,12 @@ extern int sys_unlink(void);
 extern int sys_wait(void);
 extern int sys_write(void);
 extern int sys_uptime(void);
+extern int sys_open_shared_mem(void);
+extern int sys_close_shared_mem(void);
+extern int sys_monitor_init(void);
+extern int sys_monitor_increase_all_elems(void);
+extern int sys_monitor_close_shared_mem(void);
+extern int sys_monitor_read_shared_mem(void);
 
 static int (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
@@ -126,6 +132,12 @@ static int (*syscalls[])(void) = {
 [SYS_link]    sys_link,
 [SYS_mkdir]   sys_mkdir,
 [SYS_close]   sys_close,
+[SYS_open_shared_mem]         sys_open_shared_mem,
+[SYS_close_shared_mem]        sys_close_shared_mem,
+[SYS_monitor_init]            sys_monitor_init,
+[SYS_monitor_increase_all_elems] sys_monitor_increase_all_elems,
+[SYS_monitor_close_shared_mem] sys_monitor_close_shared_mem,
+[SYS_monitor_read_shared_mem]  sys_monitor_read_shared_mem,
 };
 
 void

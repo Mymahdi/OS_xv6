@@ -6,9 +6,51 @@
 #include "mmu.h"
 #include "proc.h"
 #include "elf.h"
+#include "spinlock.h"
 
 extern char data[];  // defined by kernel.ld
 pde_t *kpgdir;  // for use in scheduler()
+
+#define MAX_SHM_PAGES 64
+
+// Data structure for managing shared memory
+struct shm_page {
+  int id;
+  char *frame;
+  int ref_count;
+};
+
+// The central table for shared memory
+static struct {
+  struct spinlock lock;
+  struct shm_page pages[MAX_SHM_PAGES];
+} shm_table;
+
+// Initialize the shared memory table
+void
+shminit(void)
+{
+  // initlock(&shm_table.lock, "shm_table");
+  // acquire(&shm_table.lock);
+  for (int i = 0; i < MAX_SHM_PAGES; i++) {
+    shm_table.pages[i].id = -1;
+    shm_table.pages[i].frame = 0; 
+    shm_table.pages[i].ref_count = 0;
+  }
+  // release(&shm_table.lock);
+}
+
+static struct shm_page*
+find_shm(int id)
+{
+  for (int i = 0; i < MAX_SHM_PAGES; i++) {
+    if (shm_table.pages[i].id == id) {
+      return &shm_table.pages[i];
+    }
+  }
+  return 0; // Not found
+}
+
 
 // Set up CPU's kernel segment descriptors.
 // Run once on entry on each CPU.
@@ -382,6 +424,157 @@ copyout(pde_t *pgdir, uint va, void *p, uint len)
     buf += n;
     va = va0 + PGSIZE;
   }
+  return 0;
+}
+
+int
+shm_open(int id)
+{
+  struct proc *curproc = myproc();
+  struct shm_page *page = 0;
+  char *mem;
+
+  acquire(&shm_table.lock);
+
+  page = find_shm(id); 
+
+  if (page) { // Page found
+    page->ref_count++;
+  } else { // Page not found, create it
+    page = 0; 
+    for (int i = 0; i < MAX_SHM_PAGES; i++) {
+      if (shm_table.pages[i].id == -1) {
+        page = &shm_table.pages[i];
+        break;
+      }
+    }
+    if (!page) {
+      release(&shm_table.lock);
+      return -1;
+    }
+
+    // 1. Allocate a physical page
+    if((mem = kalloc()) == 0) {
+      release(&shm_table.lock);
+      return -1;
+    }
+    // 2. CRITICAL STEP: Zero out the new page. This ensures it doesn't contain garbage.
+    memset(mem, 0, PGSIZE);
+
+    page->id = id;
+    page->frame = mem;
+    page->ref_count = 1;
+  }
+
+  // 3. CRITICAL STEP: Map the physical page to a new virtual address
+  uint a = PGROUNDUP(curproc->sz);
+  if(mappages(curproc->pgdir, (char*)a, PGSIZE, V2P(page->frame), PTE_W|PTE_U) < 0){
+    // Error handling...
+    page->ref_count--;
+    if(page->ref_count == 0) {
+        kfree(page->frame);
+        page->id = -1;
+        page->frame = 0;
+        page->ref_count = 0;
+    }
+    release(&shm_table.lock);
+    return -1;
+  }
+
+  release(&shm_table.lock);
+
+  // 4. CRITICAL STEP: Inform the process that its address space has grown.
+  curproc->sz = a + PGSIZE; 
+
+  return a; // Return the new, valid virtual address
+}
+
+
+// Closes a process's connection to a shared memory segment.
+int
+shm_close(int id)
+{
+  struct shm_page *page = 0;
+
+  acquire(&shm_table.lock);
+  page = find_shm(id);
+
+  if (!page || page->ref_count == 0) {
+    release(&shm_table.lock);
+    return -1; // Page not found or not referenced
+  }
+
+  page->ref_count--;
+
+  // If this was the last process, free the physical memory
+  if (page->ref_count == 0) {
+    kfree(page->frame);
+    page->id = -1;
+    page->frame = 0;
+  }
+  
+  release(&shm_table.lock);
+  return 0;
+}
+
+
+// --- Monitor Helper Functions ---
+
+int
+shm_monitor_init(int shared_mem_id, int* initial_value, int size_value)
+{
+  // First, open/create the shared memory
+  int va = shm_open(shared_mem_id);
+  if (va < 0) return -1;
+
+  // Now, initialize its value
+  acquire(&shm_table.lock);
+  struct shm_page* page = find_shm(shared_mem_id);
+  if (!page) {
+    release(&shm_table.lock);
+    return -1;
+  }
+  // Copy the initial value from user space into the physical page
+  memmove(page->frame, initial_value, sizeof(int));
+  release(&shm_table.lock);
+
+  return va;
+}
+
+int
+shm_monitor_increase(int shared_mem_id)
+{
+  acquire(&shm_table.lock);
+  struct shm_page* page = find_shm(shared_mem_id);
+  if (!page) {
+    release(&shm_table.lock);
+    return -1;
+  }
+
+  int *val = (int*)page->frame;
+  (*val)++; // Increment the value directly on the physical page
+
+  release(&shm_table.lock);
+  return 0;
+}
+
+int
+shm_monitor_read(int shared_memory_id, int* data)
+{
+  acquire(&shm_table.lock);
+  struct shm_page* page = find_shm(shared_memory_id);
+  if (!page) {
+    release(&shm_table.lock);
+    return -1;
+  }
+
+  // Safely copy the data from kernel space (the physical page) to user space
+  if(copyout(myproc()->pgdir, (uint)data, page->frame, sizeof(int)) < 0) {
+    release(&shm_table.lock);
+    return -1;
+  }
+  
+  release(&shm_table.lock);
   return 0;
 }
 
