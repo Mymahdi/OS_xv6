@@ -25,7 +25,7 @@ void test_without_monitor() {
     for (int i = 0; i < ADD; i++) {
       (*shared_var)++;
     }
-    close_shared_mem(shm_id);
+    // close_shared_mem(shm_id);
     exit();
   } else { // Parent process
     for (int i = 0; i < ADD; i++) {
@@ -51,7 +51,7 @@ void test_with_monitor() {
     for (int i = 0; i < ADD; i++) {
       monitor_increase_all_elems(shm_id);
     }
-    monitor_close_shared_mem(shm_id);
+    // monitor_close_shared_mem(shm_id);
     exit();
   } else { // Parent
     for (int i = 0; i < ADD; i++) {
