@@ -443,62 +443,52 @@ scheduler(void)
   struct cpu *c = mycpu();
   c->proc = 0;
 
-  static int rr_index = 0;        // Round Robin start index for interactive
-  const uint AGING_THRESHOLD = 800; // ticks before promoting from DEFAULT to INTERACTIVE
+  static int rr_index = 0;
+  const uint AGING_THRESHOLD = 800;
 
   for(;;){
     sti();
-
     acquire(&ptable.lock);
+    
+    struct proc *best_rt = 0;         // Best candidate from Real-Time (EDF) queue
+    int earliest_deadline = -1;       // Deadline of the best_rt candidate
+    struct proc *best_ix_after = 0;   // Best candidate from Interactive (RR) queue, found after rr_index
+    struct proc *best_ix_wrap = 0;    // Best candidate from Interactive (RR) queue, found by wrapping around
+    struct proc *best_def = 0;        // Best candidate from Default (FCFS) queue
+    uint earliest_entry = -1;         // Entry time of the best_def candidate
 
-    for (struct proc *wp = ptable.proc; wp < &ptable.proc[NPROC]; wp++) {
-      if (wp->state == RUNNABLE)
-        wp->wait_time++;
-    }
-
-    // Aging: promote DEFAULT processes to INTERACTIVE if starved
-    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-      if(p->state == RUNNABLE && p->sched_class == CLASS_DEFAULT &&
-         ticks - p->last_scheduled_time >= AGING_THRESHOLD) {
-        p->sched_class = CLASS_INTERACTIVE;
-        cprintf("PID %d: Promoted DEFAULT to INTERACTIVE (aging)\n", p->pid);
-      }
-    }
-
-    // Single-pass selection variables
-    struct proc *best_rt = 0;
-    int earliest_deadline = -1;
-    struct proc *best_ix_after = 0, *best_ix_wrap = 0;
-    struct proc *best_def = 0;
-    uint earliest_entry = -1;
-
-    // Single scan for all classes
     for(int idx = 0; idx < NPROC; idx++) {
       p = &ptable.proc[idx];
+      
       if(p->state != RUNNABLE)
         continue;
+      
+      p->wait_time++;
+      
+      // --- Integrated Aging Mechanism ---
+      if(p->sched_class == CLASS_DEFAULT && (ticks - p->entry_time_to_queue) >= AGING_THRESHOLD) {
+        p->sched_class = CLASS_INTERACTIVE;
+        p->entry_time_to_queue = ticks;
+        cprintf("PID %d: Promoted to INTERACTIVE (aging)\n", p->pid);
+      }
 
-      // Real-Time: choose earliest deadline
+      // --- Candidate Selection Logic ---
+      // current scheduling class using a strict priority order (EDF > RR > FCFS).
       if(p->sched_class == CLASS_REALTIME) {
         if(best_rt == 0 || p->deadline < earliest_deadline) {
           best_rt = p;
           earliest_deadline = p->deadline;
         }
-      }
-
-      // Interactive: Round Robin right after rr_index
-      if(p->sched_class == CLASS_INTERACTIVE) {
+      } else if(p->sched_class == CLASS_INTERACTIVE) {
         if(idx >= rr_index) {
+          // Found a candidate after or at the last known index.
           if(best_ix_after == 0)
             best_ix_after = p;
         } else if(best_ix_wrap == 0) {
+          // Found a candidate by wrapping around to the start of the table.
           best_ix_wrap = p;
         }
-        continue;
-      }
-
-      // Default: FCFS oldest last_scheduled_time
-      if(p->sched_class == CLASS_DEFAULT) {
+      } else if(p->sched_class == CLASS_DEFAULT) {
         if(best_def == 0 || p->entry_time_to_queue < earliest_entry) {
           earliest_entry = p->entry_time_to_queue;
           best_def = p;
@@ -506,19 +496,19 @@ scheduler(void)
       }
     }
 
-    // Decide which to run by priority
+    // --- Final Decision ---
     struct proc *selected = 0;
     if(best_rt) {
       selected = best_rt;
     } else if(best_ix_after || best_ix_wrap) {
       selected = best_ix_after ? best_ix_after : best_ix_wrap;
-      // update rr_index for next
+      // Update the Round Robin index for the next scheduler cycle.
       rr_index = (selected - ptable.proc + 1) % NPROC;
     } else if(best_def) {
       selected = best_def;
     }
 
-    // Run selected process
+    // --- Execute the Selected Process ---
     if(selected) {
       if(selected->sched_class != CLASS_REALTIME)
         selected->last_scheduled_time = ticks;
