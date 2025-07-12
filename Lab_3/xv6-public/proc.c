@@ -461,8 +461,6 @@ scheduler(void)
       if(p->state == RUNNABLE && p->sched_class == CLASS_DEFAULT &&
          ticks - p->last_scheduled_time >= AGING_THRESHOLD) {
         p->sched_class = CLASS_INTERACTIVE;
-        p->last_scheduled_time = ticks;
-        p->wait_time++;
         cprintf("PID %d: Promoted DEFAULT to INTERACTIVE (aging)\n", p->pid);
       }
     }
@@ -472,7 +470,7 @@ scheduler(void)
     int earliest_deadline = -1;
     struct proc *best_ix_after = 0, *best_ix_wrap = 0;
     struct proc *best_def = 0;
-    uint oldest_default = ticks;
+    uint earliest_entry = -1;
 
     // Single scan for all classes
     for(int idx = 0; idx < NPROC; idx++) {
@@ -486,7 +484,6 @@ scheduler(void)
           best_rt = p;
           earliest_deadline = p->deadline;
         }
-        continue;
       }
 
       // Interactive: Round Robin right after rr_index
@@ -502,8 +499,8 @@ scheduler(void)
 
       // Default: FCFS oldest last_scheduled_time
       if(p->sched_class == CLASS_DEFAULT) {
-        if(p->last_scheduled_time < oldest_default) {
-          oldest_default = p->last_scheduled_time;
+        if(best_def == 0 || p->entry_time_to_queue < earliest_entry) {
+          earliest_entry = p->entry_time_to_queue;
           best_def = p;
         }
       }
