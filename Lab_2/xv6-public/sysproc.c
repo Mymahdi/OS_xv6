@@ -200,13 +200,19 @@ int sys_set_sleep_syscall(void)
   if(argint(0, &n) < 0)
     return -1;
 
+  uint start;
   acquire(&tickslock);
-  uint start = ticks;
-  while (ticks - start < n) {
-    sleep(&ticks, &tickslock);
-  }
+  start = ticks;
   release(&tickslock);
+
+  while (1) {
+    acquire(&tickslock);
+    if (ticks - start >= n) {
+      release(&tickslock);
+      break;
+    }
+    release(&tickslock);
+  }
+
   return 0;
 }
-
-
